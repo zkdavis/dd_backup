@@ -4,6 +4,7 @@ import tkinter
 from datetime import datetime
 from tkinter import *
 from crontab import CronTab
+import keyring
 
 class backup_info:
     def __init__(self):
@@ -11,6 +12,7 @@ class backup_info:
         self.backup_location=None
         self.partition=None
         self.always_on=False
+        self.email = None
 
     def setup_cron(self):
         print("creating Cron Job")
@@ -45,6 +47,7 @@ class backup_info:
             else:
                 self.always_on = False
             self.partition = ls[3].split("partition: ")[1].replace("\n", '')
+            self.email = ls[4].split("email: ")[1].replace("\n", '')
         else:
             self.setConfigFile()
 
@@ -70,6 +73,11 @@ class backup_info:
         print("Warning! partition needs to be exact. If you are not sure quit here and check before continuing \n")
         print("Please write the partion or disk you wish to copy. \n")
         partition = input("ex: /dev/sda \n")
+        print("Please enter your gmail password:\n")
+        print("Note passwords are stored on the system keychain and not by this program.\n")
+        pw = input("enter password: ")
+        keyring.set_password('gmail_dd_email_pw',os.getlogin(), pw)
+        email =input("Enter gmail: \n")
         f = open("config.txt", "w")
         f.write('computer_name: ' + computer_name)
         f.write('\n')
@@ -78,6 +86,8 @@ class backup_info:
         f.write('always_on: ' + always_on_txt)
         f.write('\n')
         f.write('partition: ' + partition)
+        f.write('\n')
+        f.write('email: ' + email)
         f.write('\n')
         f.close()
         self.setup_cron()
@@ -114,12 +124,31 @@ def gui_warning():
     window.mainloop()
 
 
-def send_email():
-    print("todo")
+def send_email(bi: backup_info):
+    import smtplib, ssl
+
+    port = 465
+    pw = keyring.get_password('gmail_dd_email_pw',os.getlogin())
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login(bi.email, pw)
+        sender_email = bi.email
+        receiver_email = bi.email
+        message = " Subject: backup completed \nnotification that dd image was created for computer '"+bi.computer_name+"' \nThis message is sent from Python."
+        server.sendmail(sender_email, receiver_email, message)
+
 
 def start_backup(bi: backup_info):
+    backup_file_base= 'backup_image'
     backup_base = bi.backup_location + bi.computer_name + "/"
-    backup_command = 'sudo dd if=/dev/nvme0n1p4 conv=sync,noerror bs=64K | gzip -c  > ' + backup_base + 'backup_image.img.gz'
+    backup_file_init = backup_base + backup_file_base+'.img.gz'
+    backup_file_monthly= backup_base + backup_file_base+'_monthly.img.gz'
+    backup_file_command = backup_file_init
+    if(os.path.exists(backup_file_init)):
+        backup_file_command = backup_file_monthly
+        if(os.path.exists(backup_file_monthly)):
+            os.remove(backup_file_monthly)
+    backup_command = 'sudo dd if=/dev/nvme0n1p4 conv=sync,noerror bs=64K | gzip -c  > ' + backup_file_command
     x_thread= None
     print("starting Backup do not shut off or disconnect the internet")
 
@@ -152,7 +181,7 @@ def start_backup(bi: backup_info):
 
     print("Backup finished")
 
-    send_email()
+    send_email(bi)
 
 
 
@@ -169,7 +198,7 @@ def compare_dates(bi: backup_info):
     datetime_object = datetime.strptime(month+'/'+day+'/'+yr, '%m/%d/%Y')
 
     timediff = datetime_object - datetime.now()
-    if(timediff.days >30):
+    if(abs(timediff.days) >30):
         start_backup(bi)
 
 def check_for_backup(bi: backup_info):
@@ -185,7 +214,6 @@ def get_info():
     bi = backup_info()
     bi.loadConfig()
     check_for_backup(bi)
-
 
 
 
