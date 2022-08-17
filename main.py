@@ -134,6 +134,7 @@ def send_email(bi: backup_info):
 
     port = 465
     pw = keyring.get_password('gmail_dd_email_pw',bi.user)
+    print(pw)
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login(bi.email, pw)
@@ -218,8 +219,8 @@ def check_for_backup(bi: backup_info):
 def get_info():
     bi = backup_info()
     bi.loadConfig()
-    # check_for_backup(bi)
-    send_email(bi)
+    check_for_backup(bi)
+    # send_email(bi)
 
 
 
