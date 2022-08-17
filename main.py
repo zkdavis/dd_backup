@@ -13,6 +13,7 @@ class backup_info:
         self.partition=None
         self.always_on=False
         self.email = None
+        self.user = None
 
     def setup_cron(self):
         print("creating Cron Job")
@@ -48,6 +49,7 @@ class backup_info:
                 self.always_on = False
             self.partition = ls[3].split("partition: ")[1].replace("\n", '')
             self.email = ls[4].split("email: ")[1].replace("\n", '')
+            self.user = ls[5].split("user: ")[1].replace("\n", '')
         else:
             self.setConfigFile()
 
@@ -78,6 +80,7 @@ class backup_info:
         pw = input("enter password: ")
         keyring.set_password('gmail_dd_email_pw',os.getlogin(), pw)
         email =input("Enter gmail: \n")
+        user =input("Enter user: \n")
         f = open("config.txt", "w")
         f.write('computer_name: ' + computer_name)
         f.write('\n')
@@ -88,6 +91,8 @@ class backup_info:
         f.write('partition: ' + partition)
         f.write('\n')
         f.write('email: ' + email)
+        f.write('\n')
+        f.write('user: ' + user)
         f.write('\n')
         f.close()
         self.setup_cron()
@@ -128,7 +133,7 @@ def send_email(bi: backup_info):
     import smtplib, ssl
 
     port = 465
-    pw = keyring.get_password('gmail_dd_email_pw',os.getlogin())
+    pw = keyring.get_password('gmail_dd_email_pw',bi.user)
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login(bi.email, pw)
@@ -213,8 +218,8 @@ def check_for_backup(bi: backup_info):
 def get_info():
     bi = backup_info()
     bi.loadConfig()
-    check_for_backup(bi)
-
+    # check_for_backup(bi)
+    send_email(bi)
 
 
 
