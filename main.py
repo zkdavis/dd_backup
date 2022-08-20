@@ -134,7 +134,6 @@ def send_email(bi: backup_info):
 
     port = 465
     pw = keyring.get_password('gmail_dd_email_pw',bi.user)
-    print(pw)
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login(bi.email, pw)
@@ -154,7 +153,7 @@ def start_backup(bi: backup_info):
         backup_file_command = backup_file_monthly
         if(os.path.exists(backup_file_monthly)):
             os.remove(backup_file_monthly)
-    backup_command = 'sudo dd if=/dev/nvme0n1p4 conv=sync,noerror bs=64K | gzip -c  > ' + backup_file_command
+    backup_command = 'sudo dd if='+bi.partition+' conv=sync,noerror bs=64K status=progress | gzip -c  > ' + backup_file_command
     x_thread= None
     print("starting Backup do not shut off or disconnect the internet")
 
