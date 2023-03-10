@@ -5,9 +5,11 @@ in  a terminal where you cloned the code:
 sudo python3 main.py
 
 requirements:
-sudo apt install python3-tk
-sudo pip3 install python-decouple
-sudo pip3 install python-crontab
+    sudo apt install python3-tk
+    sudo pip3 install python-decouple
+    sudo pip3 install python-crontab
+    sudo pip3 install keychain
+
 
 maybe:
 sudo pip3 install keyrings.alt
