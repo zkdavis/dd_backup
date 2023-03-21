@@ -219,6 +219,7 @@ def get_info():
     bi = backup_info()
     bi.loadConfig()
     if(os.path.exists(os.getcwd()+'/force.txt')):
+        os.remove(os.getcwd() + '/force.txt')
         start_backup(bi)
     else:
         check_for_backup(bi)
