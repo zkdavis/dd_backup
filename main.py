@@ -218,7 +218,10 @@ def check_for_backup(bi: backup_info):
 def get_info():
     bi = backup_info()
     bi.loadConfig()
-    check_for_backup(bi)
+    if(os.path.exists(os.getcwd()+'/force.txt')):
+        start_backup(bi)
+    else:
+        check_for_backup(bi)
     # send_email(bi)
 
 
